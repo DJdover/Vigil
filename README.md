@@ -5,6 +5,8 @@ A tiny language for **honestly** scoring betting and prediction-market strategie
 Vigil has one job: make the *dishonest* version of a result impossible to express. Most ways a backtest lies to you aren't bugs — they're choices the analyst makes without noticing. Vigil turns each of those choices into a rule the language enforces, so the lie becomes something you literally cannot write.
 
 ```
+fdr 0.10                     # control false-discovery rate across ALL strategies below
+
 strategy demo {
     registered 2026-01-08    # the pre-registration date
     forward_only             # scoring earlier data is an error
@@ -13,6 +15,11 @@ strategy demo {
     min_units 30             # below this, no verdict — too thin to conclude
     coverage min 0.60        # must cover >=60% of the slate to be representative
     significance 0.95        # per-unit EV must clear a bootstrap lower bound
+    block 1                  # moving-block bootstrap size (raise for serial correlation)
+}
+
+slate {                      # the universe you could have acted on, per day
+    2026-01-08 | 20
 }
 
 bets from "demo.csv"         # date,event,side,price,won[,prob]
@@ -23,9 +30,11 @@ report demo
 Run it:
 
 ```
-python3 vigil.py lock examples/demo_thin.vig    # pre-register (write the .lock)
-python3 vigil.py examples/demo_thin.vig         # score it
-python3 tests.py                                # run the test suite
+python3 vigil.py lock examples/demo_batch.vig    # pre-register (writes the .lock)
+python3 vigil.py lock examples/demo_batch.vig --ots   # ...and OpenTimestamp it (needs `ots`)
+python3 vigil.py examples/demo_batch.vig         # score it
+python3 vigil.py verify examples/demo_batch.vig  # re-check the lock (+ .ots if present)
+python3 tests.py                                 # run the test suite
 ```
 
 ## What it is (and isn't)
@@ -38,26 +47,32 @@ Vigil evaluates whether an edge is **real**. It is deliberately *not* a tipster 
 - **Correlated bets.** Several bets on one event are one outcome. `unit event` clusters them, so a single lucky event can't pose as a winning streak.
 - **P&L ambiguity.** `pnl canonical` is the only definition there is; it can't disagree with itself across the file.
 - **Too small to conclude.** `min_units N` withholds the verdict below the floor — not positive, not negative, just *not enough data to say.*
-- **Non-representative coverage.** Declare the `slate` (the universe you could have acted on); below `coverage min`, the verdict is withheld. A strategy that only ever saw a third of the slate isn't a measurement.
+- **Non-representative coverage.** Declare the `slate`; below `coverage min`, the verdict is withheld. A strategy that only ever saw a third of the slate isn't a measurement.
 - **The win-rate mirage.** `report` never prints a win rate without EV beside it, and always shows average win vs average loss — so "won 60%!" can't hide "but lost more per loss than it made per win."
 - **A point estimate posing as an edge.** `significance C` runs a by-unit bootstrap; if the lower bound on per-unit EV is `<= 0`, the result isn't distinguishable from zero and Vigil refuses to call it positive even when the average is up.
-- **An overconfident model.** Add a `prob` column (your model's probability per bet) and Vigil reports the edge you *claimed* and checks it against what actually happened — "claimed win-rate 70% vs actual 52% — overconfident by 18 pts."
+- **Serial correlation.** `block K` switches the bootstrap to a moving-block resample of `K` consecutive units, so runs of correlated days don't masquerade as independent evidence.
+- **The multiplicity trap — "we tried fifty, one looked good."** Declare `fdr Q` and Vigil applies a Benjamini-Hochberg correction across *every* strategy in the file. A strategy that looks positive on its own is refused if it doesn't survive the correction for how many were tried. (See `examples/demo_batch.vig`: a `marginal` strategy is `+0.10/unit` and looks positive alone, but **fails FDR** once you count that four were run.)
+- **An overconfident model.** Add a `prob` column and Vigil reports the edge you *claimed*, a calibration **reliability curve + ECE**, and an overconfidence flag — "claimed win-rate 70% vs actual 56% — overconfident by 14 pts."
 
 ## Verdicts
 
 - `NO VERDICT` — underpowered or coverage too thin. Honest abstention.
-- `NO EDGE` — per-unit EV `<= 0`, or positive but not significant.
-- `POSITIVE` — forward, per-unit EV `> 0`, and clears the significance bound.
+- `NO EDGE` — per-unit EV `<= 0`, or positive but not significant, or fails FDR across the batch.
+- `POSITIVE` — forward, per-unit EV `> 0`, clears significance, and survives FDR.
 
-## The integrity model
+## The integrity model — and its honest limit
 
-The thresholds only mean something if the strategy block is committed **before** you look at the data. `vigil lock <file.vig>` writes a hash of the strategy block to `<file.vig>.lock`; commit it alongside the `.vig` and timestamp it (e.g. via OpenTimestamps). On every run Vigil recomputes the hash and **refuses to score if the block changed** — because lowering `min_units` until a `NO VERDICT` becomes a `POSITIVE` is goalpost-moving. Vigil enforces the rules; the lock is what stops you from quietly rewriting them.
+The thresholds only mean something if the **whole protocol** — every strategy block, every slate, and the `fdr` setting — is committed *before* you look at the data. `vigil lock <file>` writes a hash of that protocol to `<file>.lock` and **refuses to score if it changes** — editing a threshold, shrinking a slate, or adding/removing strategies after seeing results is goalpost-moving. `vigil lock <file> --ots` (or `ots stamp <file>.lock`) anchors that hash in time via OpenTimestamps; `vigil verify <file>` re-checks the hash and the timestamp.
+
+Locking the *whole file* is what makes FDR honest: Benjamini-Hochberg only controls the strategies you declared, so the timestamp over all of them is the proof you didn't hide the losers.
+
+**What Vigil cannot do — said plainly.** It verifies a result is *internally* honest. It cannot verify your *inputs*: the registration date, the slate, and the data are things you declare, and Vigil takes them on faith. A determined cheater can still feed it fiction. The lock + an OpenTimestamps proof over the full pre-registered file close that gap as far as any tool can — they make "I committed these exact rules, this slate, and this whole batch, before this date" checkable by anyone — but they cannot make your data true. Vigil is an honesty tool for someone who wants to be honest, not a fraud-proof oracle.
 
 ## Roadmap (genuine future work, deliberately not in v1)
 
-- Multiple strategies in one file with a Benjamini–Hochberg FDR correction (the "tried fifty, one looked good" trap).
-- A block bootstrap for serially-correlated units.
-- Typed `price` vs `prob` as a full expression layer for bet *selection*.
+- A typed `price` vs `prob` expression layer for bet *selection* (so selection logic is part of the locked protocol too).
+- Per-strategy registered dates with a staggered-holdout report.
+- Richer calibration output (per-bin counts already shown; significance bands on the reliability curve next).
 
 Not on the roadmap, on purpose: pick generation and bet sizing. See "What it is (and isn't)."
 

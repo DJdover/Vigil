@@ -1,0 +1,45 @@
+# demo_batch.vig — the multiplicity trap: "we tried four strategies, one looked good."
+# Vigil controls the false-discovery rate across the WHOLE batch with Benjamini-Hochberg.
+# Lock + OpenTimestamp this file before looking at data so the four strategies below are
+# provably all of them — FDR only protects against the losers you actually declared.
+fdr 0.10
+
+strategy strong {
+    registered 2026-01-01
+    forward_only
+    unit bet
+    pnl canonical
+    min_units 30
+}
+bets from "batch_strong.csv"
+report strong
+
+strategy marginal {
+    registered 2026-01-01
+    forward_only
+    unit bet
+    pnl canonical
+    min_units 30
+}
+bets from "batch_marginal.csv"
+report marginal
+
+strategy null1 {
+    registered 2026-01-01
+    forward_only
+    unit bet
+    pnl canonical
+    min_units 30
+}
+bets from "batch_null1.csv"
+report null1
+
+strategy null2 {
+    registered 2026-01-01
+    forward_only
+    unit bet
+    pnl canonical
+    min_units 30
+}
+bets from "batch_null2.csv"
+report null2
