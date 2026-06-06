@@ -1,0 +1,14 @@
+# demo_null.vig — plenty of bets, no real edge. The significance gate catches a
+# positive-looking average that isn't distinguishable from zero.
+strategy coinflips {
+    registered 2026-01-01
+    forward_only
+    unit bet
+    pnl canonical
+    min_units 30
+    significance 0.95
+}
+
+bets from "demo_null.csv"
+
+report coinflips

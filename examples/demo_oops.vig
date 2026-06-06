@@ -1,0 +1,14 @@
+# demo_oops.vig — discipline off, in-sample data included. Vigil refuses to score.
+strategy demo {
+    registered 2026-01-08
+    # forward_only        <- the mistake: scoring on pre-registration data
+    unit event
+    pnl canonical
+}
+
+bets {
+    2026-01-07 | MKT-0991 | NO  | 0.40 | true
+    2026-01-09 | MKT-1014 | YES | 0.60 | true
+}
+
+report demo

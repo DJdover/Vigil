@@ -1,0 +1,14 @@
+# demo_edge.vig — you bring your model's probabilities; Vigil checks whether the
+# edge you claimed actually showed up, or whether your model is overconfident.
+strategy model_check {
+    registered 2026-01-01
+    forward_only
+    unit bet
+    pnl canonical
+    min_units 30
+    significance 0.95
+}
+
+bets from "demo_edge.csv"
+
+report model_check

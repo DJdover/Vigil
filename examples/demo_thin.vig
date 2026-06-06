@@ -1,0 +1,20 @@
+# demo_thin.vig — a strategy with too little, too-uneven data to conclude.
+strategy demo {
+    registered 2026-01-08
+    forward_only
+    unit event
+    pnl canonical
+    min_units 30
+    coverage min 0.60
+}
+
+# the universe the strategy could have acted on, per day
+slate {
+    2026-01-08 | 20
+    2026-01-09 | 20
+    2026-01-10 | 20
+}
+
+bets from "demo_thin.csv"
+
+report demo
