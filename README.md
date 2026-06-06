@@ -68,6 +68,26 @@ Locking the *whole file* is what makes FDR honest: Benjamini-Hochberg only contr
 
 **What Vigil cannot do — said plainly.** It verifies a result is *internally* honest. It cannot verify your *inputs*: the registration date, the slate, and the data are things you declare, and Vigil takes them on faith. A determined cheater can still feed it fiction. The lock + an OpenTimestamps proof over the full pre-registered file close that gap as far as any tool can — they make "I committed these exact rules, this slate, and this whole batch, before this date" checkable by anyone — but they cannot make your data true. Vigil is an honesty tool for someone who wants to be honest, not a fraud-proof oracle.
 
+## Pre-registration in practice
+
+```
+$ vigil lock demo_batch.vig
+locked demo_batch.vig -> demo_batch.vig.lock (45b14a32…)
+this hash covers the whole pre-registered protocol: every strategy block, slate, and the
+fdr setting — but NOT the bet data. commit the .lock alongside the .vig.
+to anchor this hash in time: `vigil lock demo_batch.vig --ots`  (or: ots stamp demo_batch.vig.lock)
+
+$ vigil verify demo_batch.vig
+OK — protocol matches the lock (45b14a32…)
+
+# ...later, someone quietly loosens a threshold after seeing the data:
+$ vigil verify demo_batch.vig          # exits non-zero
+MISMATCH — protocol hash 617be964… != locked 45b14a32…
+the pre-registered protocol changed since locking. this is the goalpost-moving guard.
+```
+
+The `.lock` is yours to commit and timestamp — it is intentionally **not** shipped in this repo, so the examples stay runnable from a clean state and so the lock means *your* pre-registration, not ours.
+
 ## Roadmap (genuine future work, deliberately not in v1)
 
 - A typed `price` vs `prob` expression layer for bet *selection* (so selection logic is part of the locked protocol too).
@@ -79,3 +99,12 @@ Not on the roadmap, on purpose: pick generation and bet sizing. See "What it is 
 ## License
 
 MIT. See `LICENSE`.
+
+## The Oddvane research program
+
+Vigil is the discipline behind a set of pre-registered, falsification-first studies of how prediction markets move and how well they're calibrated — published whether or not the result is exciting (so far, mostly not — which is the point).
+
+- [Oddvane-study-A](https://github.com/DJdover/Oddvane-study-A) — cross-venue lead-lag on championship futures. **No robust lead.**
+- [Oddvane-study-A2](https://github.com/DJdover/Oddvane-study-A2) — cross-venue lead-lag on 871 live in-game markets. **No robust lead.**
+- [Oddvane-study-D](https://github.com/DJdover/Oddvane-study-D) — cross-venue "who's right" calibration edge. **No edge** — the venues are equally calibrated.
+- **Vigil** (this repo) — the pre-registration + falsification discipline those studies run on, as a reusable tool.
