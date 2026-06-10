@@ -100,11 +100,16 @@ Not on the roadmap, on purpose: pick generation and bet sizing. See "What it is 
 
 MIT. See `LICENSE`.
 
-## The Oddvane research program
+The Oddvane program
 
-Vigil is the discipline behind a set of pre-registered, falsification-first studies of how prediction markets move and how well they're calibrated — published whether or not the result is exciting (so far, mostly not — which is the point).
+Pre-registered, falsification-first research on prediction markets — plus small, honest tools for anyone doing the same. Published whether the result is exciting or not (so far, mostly not — which is the point).
 
-- [Oddvane-study-A](https://github.com/DJdover/Oddvane-study-A) — cross-venue lead-lag on championship futures. **No robust lead.**
-- [Oddvane-study-A2](https://github.com/DJdover/Oddvane-study-A2) — cross-venue lead-lag on 871 live in-game markets. **No robust lead.**
-- [Oddvane-study-D](https://github.com/DJdover/Oddvane-study-D) — cross-venue "who's right" calibration edge. **No edge** — the venues are equally calibrated.
-- **Vigil** (this repo) — the pre-registration + falsification discipline those studies run on, as a reusable tool.
+Studies (pre-registered; null so far):
+- [Oddvane-study-A](https://github.com/DJdover/Oddvane-study-A) — lead-lag on championship futures. No robust lead.
+- [Oddvane-study-A2](https://github.com/DJdover/Oddvane-study-A2) — lead-lag on 871 live in-game markets. No robust lead.
+- [Oddvane-study-D](https://github.com/DJdover/Oddvane-study-D) — cross-venue "who's right" edge. No edge.
+
+Tools (MIT, dependency-light):
+- [Vigil](https://github.com/DJdover/Vigil) — make the dishonest version of a backtest impossible to express.  (this repo)
+- [plumb](https://github.com/DJdover/plumb) — is your forecaster calibrated? Brier / ECE / reliability on your own data.
+- [devig](https://github.com/DJdover/devig) — strip the bookmaker margin; get the fair line.
